@@ -1,0 +1,256 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 520" width="1100" height="520">
+  <style>
+    text { font-family: system-ui, -apple-system, sans-serif; }
+    .main-title { font-size: 17px; font-weight: 700; fill: #18181b; }
+    .section-title { font-size: 13px; font-weight: 600; fill: #18181b; }
+    .label { font-size: 10px; fill: #3f3f46; }
+    .value { font-size: 9.5px; fill: #52525b; font-weight: 500; }
+    .value-bold { font-size: 9.5px; fill: #18181b; font-weight: 600; }
+    .pct-white { font-size: 9px; fill: white; font-weight: 600; }
+    .axis-label { font-size: 9px; fill: #a1a1aa; }
+    .legend-text { font-size: 9.5px; fill: #3f3f46; }
+    .footnote { font-size: 9px; fill: #a1a1aa; font-style: italic; }
+    .bar { rx: 2.5; ry: 2.5; }
+    .grid { stroke: #f4f4f5; stroke-width: 0.5; stroke-dasharray: 3,3; }
+    .axis { stroke: #e4e4e7; stroke-width: 1; }
+    .divider { stroke: #e4e4e7; stroke-width: 1; stroke-dasharray: 6,4; }
+  </style>
+  <rect width="1100" height="520" fill="white"/>
+
+  <text x="24" y="24" class="main-title">ProveKit Prover: Where Time Goes</text>
+  <text x="24" y="40" class="axis-label">complete_age_check circuit · 631K constraints · 1.25M witnesses · Apple Silicon arm64</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- TOP-LEFT: Pipeline Breakdown (chart 1) -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <text x="24" y="68" class="section-title">A. Proving Pipeline (prove_with_witness: 1,400 ms)</text>
+
+  <line x1="178" y1="78" x2="178" y2="268" class="axis"/>
+  <!-- Grid at 200, 400, 600 ms. Scale: 0 at x=178, max ~830ms at x=178+415=593. 1ms=0.5px -->
+  <line x1="278" y1="78" x2="278" y2="268" class="grid"/>
+  <line x1="378" y1="78" x2="378" y2="268" class="grid"/>
+  <line x1="478" y1="78" x2="478" y2="268" class="grid"/>
+
+  <!-- Witness gen: 157ms 11.0% -->
+  <text x="173" y="94" class="label" text-anchor="end">Witness gen</text>
+  <rect x="178" y="83" width="79" height="17" fill="#2563eb" class="bar" opacity="0.85"/>
+  <text x="261" y="95" class="value">157 ms · 11.0%</text>
+
+  <!-- Solve w1: 38ms 2.7% -->
+  <text x="173" y="118" class="label" text-anchor="end">Solve w1</text>
+  <rect x="178" y="107" width="19" height="17" fill="#10b981" class="bar" opacity="0.85"/>
+  <text x="201" y="119" class="value">38 ms</text>
+
+  <!-- Commit w1: 184ms 12.9% -->
+  <text x="173" y="142" class="label" text-anchor="end">Commit w1</text>
+  <rect x="178" y="131" width="92" height="17" fill="#f59e0b" class="bar" opacity="0.85"/>
+  <text x="274" y="143" class="value">184 ms · 12.9%</text>
+
+  <!-- Solve w2: 35ms 2.4% -->
+  <text x="173" y="166" class="label" text-anchor="end">Solve w2</text>
+  <rect x="178" y="155" width="18" height="17" fill="#10b981" class="bar" opacity="0.85"/>
+  <text x="200" y="167" class="value">35 ms</text>
+
+  <!-- Commit w2: 176ms 12.3% -->
+  <text x="173" y="190" class="label" text-anchor="end">Commit w2</text>
+  <rect x="178" y="179" width="88" height="17" fill="#f59e0b" class="bar" opacity="0.85"/>
+  <text x="270" y="191" class="value">176 ms · 12.3%</text>
+
+  <!-- prove_noir: 830ms 58.0% -->
+  <text x="173" y="214" class="label" text-anchor="end">prove_noir</text>
+  <rect x="178" y="203" width="415" height="17" fill="#ef4444" class="bar" opacity="0.85"/>
+  <text x="400" y="215" class="pct-white">830 ms · 58.0%</text>
+
+  <!-- Serialize: 10ms -->
+  <text x="173" y="238" class="label" text-anchor="end">Serialize</text>
+  <rect x="178" y="227" width="5" height="17" fill="#a3a3a3" class="bar" opacity="0.7"/>
+  <text x="188" y="239" class="value">10 ms</text>
+
+  <!-- Scale -->
+  <text x="178" y="262" class="axis-label" text-anchor="middle">0</text>
+  <text x="278" y="262" class="axis-label" text-anchor="middle">200</text>
+  <text x="378" y="262" class="axis-label" text-anchor="middle">400</text>
+  <text x="478" y="262" class="axis-label" text-anchor="middle">600</text>
+  <text x="530" y="262" class="axis-label">ms</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- TOP-RIGHT: CPU Subsystems (chart 2) -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <line x1="600" y1="52" x2="600" y2="268" class="divider"/>
+  <text x="620" y="68" class="section-title">B. CPU Time by Subsystem (7,600 samples)</text>
+
+  <!-- Axis at x=790. Scale: 0%=790, 30%=1070. 1%=9.33px -->
+  <line x1="790" y1="78" x2="790" y2="258" class="axis"/>
+  <line x1="837" y1="78" x2="837" y2="258" class="grid"/>
+  <line x1="883" y1="78" x2="883" y2="258" class="grid"/>
+  <line x1="930" y1="78" x2="930" y2="258" class="grid"/>
+  <line x1="977" y1="78" x2="977" y2="258" class="grid"/>
+
+  <!-- Fr::mul_assign 28.1% -->
+  <text x="785" y="93" class="label" text-anchor="end">Fr::mul_assign</text>
+  <rect x="790" y="82" width="262" height="16" fill="#ef4444" class="bar" opacity="0.85"/>
+  <text x="1057" y="93" class="value-bold">28.1%</text>
+
+  <!-- Skyscraper 19.0% -->
+  <text x="785" y="113" class="label" text-anchor="end">Skyscraper hash</text>
+  <rect x="790" y="102" width="177" height="16" fill="#8b5cf6" class="bar" opacity="0.85"/>
+  <text x="972" y="113" class="value">19.0%</text>
+
+  <!-- NTT compute 15.2% -->
+  <text x="785" y="133" class="label" text-anchor="end">NTT compute</text>
+  <rect x="790" y="122" width="142" height="16" fill="#2563eb" class="bar" opacity="0.85"/>
+  <text x="937" y="133" class="value">15.2%</text>
+
+  <!-- mixed_dot 6.1% -->
+  <text x="785" y="153" class="label" text-anchor="end">Weight fold</text>
+  <rect x="790" y="142" width="57" height="16" fill="#f59e0b" class="bar" opacity="0.85"/>
+  <text x="851" y="153" class="value">6.1%</text>
+
+  <!-- Sumcheck 5.5% -->
+  <text x="785" y="173" class="label" text-anchor="end">Sumcheck</text>
+  <rect x="790" y="162" width="51" height="16" fill="#10b981" class="bar" opacity="0.85"/>
+  <text x="846" y="173" class="value">5.5%</text>
+
+  <!-- NTT transpose 5.3% -->
+  <text x="785" y="193" class="label" text-anchor="end">NTT transpose</text>
+  <rect x="790" y="182" width="49" height="16" fill="#06b6d4" class="bar" opacity="0.85"/>
+  <text x="844" y="193" class="value">5.3%</text>
+
+  <!-- XZ/LZMA 5.5% -->
+  <text x="785" y="213" class="label" text-anchor="end">I/O (XZ decomp)</text>
+  <rect x="790" y="202" width="51" height="16" fill="#a3a3a3" class="bar" opacity="0.65"/>
+  <text x="846" y="213" class="value">5.5%</text>
+
+  <!-- OS/kernel 4.9% -->
+  <text x="785" y="233" class="label" text-anchor="end">OS/kernel</text>
+  <rect x="790" y="222" width="46" height="16" fill="#a3a3a3" class="bar" opacity="0.45"/>
+  <text x="840" y="233" class="value">4.9%</text>
+
+  <!-- Other -->
+  <text x="785" y="253" class="label" text-anchor="end">Other</text>
+  <rect x="790" y="242" width="42" height="16" fill="#a3a3a3" class="bar" opacity="0.3"/>
+  <text x="837" y="253" class="value">4.5%</text>
+
+  <!-- Scale -->
+  <text x="790" y="270" class="axis-label" text-anchor="middle">0%</text>
+  <text x="837" y="270" class="axis-label" text-anchor="middle">5</text>
+  <text x="883" y="270" class="axis-label" text-anchor="middle">10</text>
+  <text x="930" y="270" class="axis-label" text-anchor="middle">15</text>
+  <text x="977" y="270" class="axis-label" text-anchor="middle">20</text>
+  <text x="1023" y="270" class="axis-label" text-anchor="middle">25</text>
+  <text x="1070" y="270" class="axis-label" text-anchor="middle">30%</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- Horizontal divider -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <line x1="24" y1="286" x2="1076" y2="286" class="divider"/>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- BOTTOM-LEFT: mul_assign Callers (chart 3 — horizontal stacked bar + legend) -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <text x="24" y="310" class="section-title">C. Who Calls mul_assign? (2,138 samples)</text>
+
+  <!-- Stacked horizontal bar: total width 500px at x=24..524 -->
+  <!-- NTT 72.3% = 362px -->
+  <rect x="24" y="320" width="362" height="24" fill="#2563eb" class="bar" opacity="0.85"/>
+  <text x="205" y="336" class="pct-white">NTT butterflies 72.3%</text>
+
+  <!-- mixed_dot 11.8% = 59px -->
+  <rect x="386" y="320" width="59" height="24" fill="#f59e0b" class="bar" opacity="0.85"/>
+  <text x="415" y="336" class="pct-white" font-size="8">11.8%</text>
+
+  <!-- geometric 8.6% = 43px -->
+  <rect x="445" y="320" width="43" height="24" fill="#10b981" class="bar" opacity="0.85"/>
+  <text x="466" y="336" class="pct-white" font-size="8">8.6%</text>
+
+  <!-- sumcheck 4.3% = 22px -->
+  <rect x="488" y="320" width="22" height="24" fill="#8b5cf6" class="bar" opacity="0.85"/>
+
+  <!-- other 3.0% = 15px -->
+  <rect x="510" y="320" width="14" height="24" fill="#a3a3a3" class="bar" opacity="0.6"/>
+
+  <!-- Legend row -->
+  <rect x="24" y="354" width="10" height="10" fill="#2563eb" rx="2" opacity="0.85"/>
+  <text x="38" y="363" class="legend-text">NTT 72.3%</text>
+
+  <rect x="110" y="354" width="10" height="10" fill="#f59e0b" rx="2" opacity="0.85"/>
+  <text x="124" y="363" class="legend-text">mixed_dot 11.8%</text>
+
+  <rect x="220" y="354" width="10" height="10" fill="#10b981" rx="2" opacity="0.85"/>
+  <text x="234" y="363" class="legend-text">geometric 8.6%</text>
+
+  <rect x="320" y="354" width="10" height="10" fill="#8b5cf6" rx="2" opacity="0.85"/>
+  <text x="334" y="363" class="legend-text">Sumcheck 4.3%</text>
+
+  <rect x="420" y="354" width="10" height="10" fill="#a3a3a3" rx="2" opacity="0.6"/>
+  <text x="434" y="363" class="legend-text">Other 3.0%</text>
+
+  <text x="24" y="382" class="footnote">Skyscraper hash: 0% of mul_assign — uses separate bn254_multiplier SIMD path</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- BOTTOM-RIGHT: WHIR Round Decay (chart 5) -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <line x1="600" y1="286" x2="600" y2="510" class="divider"/>
+  <text x="620" y="310" class="section-title">D. WHIR Round Cost Decay (w1 proof, 215 ms)</text>
+
+  <!-- Chart area: x=660..1060, y=325..470. Height=145px for 80ms. 1ms=1.8125px -->
+  <line x1="660" y1="470" x2="1060" y2="470" class="axis"/>
+  <line x1="660" y1="470" x2="660" y2="325" class="axis"/>
+  <line x1="660" y1="434" x2="1060" y2="434" class="grid"/>
+  <line x1="660" y1="398" x2="1060" y2="398" class="grid"/>
+  <line x1="660" y1="362" x2="1060" y2="362" class="grid"/>
+  <line x1="660" y1="325" x2="1060" y2="325" class="grid"/>
+
+  <!-- Y-axis -->
+  <text x="654" y="474" class="axis-label" text-anchor="end">0</text>
+  <text x="654" y="438" class="axis-label" text-anchor="end">20</text>
+  <text x="654" y="402" class="axis-label" text-anchor="end">40</text>
+  <text x="654" y="366" class="axis-label" text-anchor="end">60</text>
+  <text x="654" y="329" class="axis-label" text-anchor="end">80 ms</text>
+
+  <!-- Round 1: IRS=75.6ms → h=137, top=333. Sumcheck=6.48ms → h=11.7, top=458.3 -->
+  <rect x="690" y="333" width="28" height="137" fill="#10b981" class="bar" opacity="0.85"/>
+  <text x="704" y="328" class="value" text-anchor="middle">75.6</text>
+  <rect x="720" y="458.3" width="28" height="11.7" fill="#ec4899" class="bar" opacity="0.85"/>
+  <text x="734" y="453" class="value" text-anchor="middle">6.5</text>
+  <text x="714" y="488" class="label" text-anchor="middle">R1</text>
+  <text x="714" y="498" class="axis-label" text-anchor="middle">1M</text>
+
+  <!-- Round 2: IRS=36.9ms → h=66.9, top=403.1. Sumcheck=2.26ms → h=4.1, top=465.9 -->
+  <rect x="770" y="403.1" width="28" height="66.9" fill="#10b981" class="bar" opacity="0.85"/>
+  <text x="784" y="398" class="value" text-anchor="middle">36.9</text>
+  <rect x="800" y="465.9" width="28" height="4.1" fill="#ec4899" class="bar" opacity="0.85"/>
+  <text x="814" y="461" class="value" text-anchor="middle">2.3</text>
+  <text x="799" y="488" class="label" text-anchor="middle">R2</text>
+  <text x="799" y="498" class="axis-label" text-anchor="middle">131K</text>
+
+  <!-- Round 3: IRS=19.1ms → h=34.6, top=435.4. Sumcheck=0.82ms → h=1.5, top=468.5 -->
+  <rect x="850" y="435.4" width="28" height="34.6" fill="#10b981" class="bar" opacity="0.85"/>
+  <text x="864" y="430" class="value" text-anchor="middle">19.1</text>
+  <rect x="880" y="468.5" width="28" height="1.5" fill="#ec4899" class="bar" opacity="0.85"/>
+  <text x="894" y="464" class="value" text-anchor="middle">0.8</text>
+  <text x="879" y="488" class="label" text-anchor="middle">R3</text>
+  <text x="879" y="498" class="axis-label" text-anchor="middle">16K</text>
+
+  <!-- Round 4: IRS=10.6ms → h=19.2, top=450.8. Sumcheck=0.22ms → tiny -->
+  <rect x="930" y="450.8" width="28" height="19.2" fill="#10b981" class="bar" opacity="0.85"/>
+  <text x="944" y="446" class="value" text-anchor="middle">10.6</text>
+  <rect x="960" y="469.6" width="28" height="0.4" fill="#ec4899" class="bar" opacity="0.85"/>
+  <text x="979" y="464" class="value">0.2</text>
+  <text x="959" y="488" class="label" text-anchor="middle">R4</text>
+  <text x="959" y="498" class="axis-label" text-anchor="middle">2K</text>
+
+  <!-- Round 5: IRS=6.36ms → h=11.5, top=458.5 -->
+  <rect x="1010" y="458.5" width="28" height="11.5" fill="#10b981" class="bar" opacity="0.85"/>
+  <text x="1024" y="454" class="value" text-anchor="middle">6.4</text>
+  <text x="1029" y="488" class="label" text-anchor="middle">R5</text>
+  <text x="1029" y="498" class="axis-label" text-anchor="middle">256</text>
+
+  <!-- Legend -->
+  <rect x="940" y="318" width="10" height="10" fill="#10b981" rx="2" opacity="0.85"/>
+  <text x="954" y="327" class="legend-text">IRS Commit</text>
+  <rect x="1010" y="318" width="10" height="10" fill="#ec4899" rx="2" opacity="0.85"/>
+  <text x="1024" y="327" class="legend-text">Sumcheck</text>
+
+  <text x="860" y="510" class="axis-label" text-anchor="middle" font-style="italic">domain size (elements)</text>
+</svg>
