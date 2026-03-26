@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 340" width="1100" height="340">
+  <style>
+    text { font-family: system-ui, -apple-system, sans-serif; }
+    .main-title { font-size: 17px; font-weight: 700; fill: #18181b; }
+    .section-title { font-size: 13px; font-weight: 600; fill: #18181b; }
+    .label { font-size: 10px; fill: #3f3f46; }
+    .value { font-size: 10px; fill: #52525b; font-weight: 500; }
+    .value-bold { font-size: 10px; fill: #18181b; font-weight: 600; }
+    .value-blue { font-size: 10px; fill: #2563eb; font-weight: 600; }
+    .axis-label { font-size: 9px; fill: #a1a1aa; }
+    .legend-text { font-size: 9.5px; fill: #3f3f46; }
+    .speedup { font-size: 10px; fill: #10b981; font-weight: 600; }
+    .bar { rx: 3; ry: 3; }
+    .grid { stroke: #f4f4f5; stroke-width: 0.5; stroke-dasharray: 3,3; }
+    .axis { stroke: #e4e4e7; stroke-width: 1; }
+    .divider { stroke: #e4e4e7; stroke-width: 1; stroke-dasharray: 6,4; }
+    .dot { fill: #2563eb; }
+  </style>
+  <rect width="1100" height="340" fill="white"/>
+
+  <text x="24" y="24" class="main-title">ProveKit Prover: Optimization Impact &amp; Resources</text>
+  <text x="24" y="40" class="axis-label">complete_age_check circuit · Apple Silicon arm64 · 16 cores · 48 GB RAM</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- LEFT: Speedup Impact (chart 4) -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <text x="24" y="68" class="section-title">E. Impact of Faster Field Multiplication</text>
+
+  <!-- Chart area: x=100..500, y=85..270. Height=185px for 2200ms. 1ms=0.0841px -->
+  <!-- Grid -->
+  <line x1="100" y1="270" x2="500" y2="270" class="axis"/>
+  <line x1="100" y1="270" x2="100" y2="85" class="axis"/>
+  <line x1="100" y1="227.9" x2="500" y2="227.9" class="grid"/>
+  <line x1="100" y1="185.8" x2="500" y2="185.8" class="grid"/>
+  <line x1="100" y1="143.6" x2="500" y2="143.6" class="grid"/>
+  <line x1="100" y1="101.5" x2="500" y2="101.5" class="grid"/>
+
+  <!-- Y-axis labels -->
+  <text x="94" y="274" class="axis-label" text-anchor="end">0</text>
+  <text x="94" y="231" class="axis-label" text-anchor="end">500</text>
+  <text x="94" y="189" class="axis-label" text-anchor="end">1,000</text>
+  <text x="94" y="147" class="axis-label" text-anchor="end">1,500</text>
+  <text x="94" y="105" class="axis-label" text-anchor="end">2,000 ms</text>
+
+  <!-- Group 1: Current — center ~185 -->
+  <!-- prove: 1400ms → h=117.7, top=152.3 -->
+  <rect x="148" y="152.3" width="38" height="117.7" fill="#2563eb" class="bar" opacity="0.85"/>
+  <text x="167" y="146" class="value-bold" text-anchor="middle">1,400</text>
+  <!-- total: 2140ms → h=179.9, top=90.1 -->
+  <rect x="190" y="90.1" width="38" height="179.9" fill="#2563eb" class="bar" opacity="0.3"/>
+  <text x="209" y="84" class="value" text-anchor="middle">2,140</text>
+  <text x="185" y="290" class="label" text-anchor="middle">Current</text>
+
+  <!-- Group 2: 2× faster — center ~310 -->
+  <!-- prove: 1160ms → h=97.6, top=172.4 -->
+  <rect x="273" y="172.4" width="38" height="97.6" fill="#10b981" class="bar" opacity="0.85"/>
+  <text x="292" y="166" class="value-bold" text-anchor="middle">1,160</text>
+  <!-- total: 1900ms → h=159.8, top=110.2 -->
+  <rect x="315" y="110.2" width="38" height="159.8" fill="#10b981" class="bar" opacity="0.3"/>
+  <text x="334" y="104" class="value" text-anchor="middle">1,900</text>
+  <text x="310" y="290" class="label" text-anchor="middle">2× faster mul</text>
+  <text x="310" y="304" class="speedup" text-anchor="middle">1.21× speedup</text>
+
+  <!-- Group 3: ∞ fast — center ~435 -->
+  <!-- prove: 920ms → h=77.4, top=192.6 -->
+  <rect x="398" y="192.6" width="38" height="77.4" fill="#f59e0b" class="bar" opacity="0.85"/>
+  <text x="417" y="186" class="value-bold" text-anchor="middle">920</text>
+  <!-- total: 1660ms → h=139.6, top=130.4 -->
+  <rect x="440" y="130.4" width="38" height="139.6" fill="#f59e0b" class="bar" opacity="0.3"/>
+  <text x="459" y="124" class="value" text-anchor="middle">1,660</text>
+  <text x="435" y="290" class="label" text-anchor="middle">∞ fast mul</text>
+  <text x="435" y="304" class="speedup" text-anchor="middle">1.52× ceiling</text>
+
+  <!-- Legend -->
+  <rect x="370" y="68" width="10" height="10" fill="#3f3f46" rx="2" opacity="0.85"/>
+  <text x="384" y="77" class="legend-text">prove_with_witness</text>
+  <rect x="370" y="82" width="10" height="10" fill="#3f3f46" rx="2" opacity="0.3"/>
+  <text x="384" y="91" class="legend-text">total prove command</text>
+
+  <!-- Annotation -->
+  <text x="100" y="324" class="axis-label">Skyscraper hash (19% of CPU) is unaffected — uses separate SIMD path.</text>
+  <text x="100" y="336" class="axis-label">Even ∞-fast mul caps at 1.52× because 65.7% of time is in hashing, NTT transposes, and I/O.</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- RIGHT: Memory Profile (chart 6) -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <line x1="555" y1="52" x2="555" y2="340" class="divider"/>
+  <text x="575" y="68" class="section-title">F. Peak Memory by Phase (MB)</text>
+
+  <!-- Chart area: x=630..1060, y=90..270. Height=180px for 1000MB. 1MB=0.18px -->
+  <line x1="630" y1="270" x2="1060" y2="270" class="axis"/>
+  <line x1="630" y1="270" x2="630" y2="90" class="axis"/>
+  <line x1="630" y1="225" x2="1060" y2="225" class="grid"/>
+  <line x1="630" y1="180" x2="1060" y2="180" class="grid"/>
+  <line x1="630" y1="135" x2="1060" y2="135" class="grid"/>
+  <line x1="630" y1="90" x2="1060" y2="90" class="grid"/>
+
+  <!-- Y-axis -->
+  <text x="624" y="274" class="axis-label" text-anchor="end">0</text>
+  <text x="624" y="229" class="axis-label" text-anchor="end">250</text>
+  <text x="624" y="184" class="axis-label" text-anchor="end">500</text>
+  <text x="624" y="139" class="axis-label" text-anchor="end">750</text>
+  <text x="624" y="94" class="axis-label" text-anchor="end">1000</text>
+
+  <!-- Data points: 6 points from x=680 to x=1030, gap=70 -->
+  <!-- Read key: 581MB → y=270-(581*0.18)=270-104.6=165.4 -->
+  <!-- Solve w1: 389MB → y=270-70.0=200.0 -->
+  <!-- Commit w1: 475MB → y=270-85.5=184.5 -->
+  <!-- Solve w2: 607MB → y=270-109.3=160.7 -->
+  <!-- Commit w2: 688MB → y=270-123.8=146.2 -->
+  <!-- prove_noir: 908MB → y=270-163.4=106.6 -->
+
+  <!-- Fill area -->
+  <polygon points="680,270 680,165.4 750,200.0 820,184.5 890,160.7 960,146.2 1030,106.6 1030,270"
+           fill="#2563eb" opacity="0.08"/>
+
+  <!-- Line -->
+  <polyline points="680,165.4 750,200.0 820,184.5 890,160.7 960,146.2 1030,106.6"
+            fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- Dots and values -->
+  <circle cx="680" cy="165.4" r="4" class="dot"/>
+  <text x="680" y="157" class="value-blue" text-anchor="middle">581</text>
+
+  <circle cx="750" cy="200.0" r="4" class="dot"/>
+  <text x="750" y="213" class="value-blue" text-anchor="middle">389</text>
+
+  <circle cx="820" cy="184.5" r="4" class="dot"/>
+  <text x="820" y="177" class="value-blue" text-anchor="middle">475</text>
+
+  <circle cx="890" cy="160.7" r="4" class="dot"/>
+  <text x="890" y="153" class="value-blue" text-anchor="middle">607</text>
+
+  <circle cx="960" cy="146.2" r="4" class="dot"/>
+  <text x="960" y="139" class="value-blue" text-anchor="middle">688</text>
+
+  <circle cx="1030" cy="106.6" r="4" class="dot" fill="#ef4444"/>
+  <text x="1030" y="99" class="value-bold" text-anchor="middle" fill="#ef4444">908</text>
+
+  <!-- X-axis labels -->
+  <text x="680" y="284" class="label" text-anchor="middle">Read</text>
+  <text x="680" y="294" class="label" text-anchor="middle">key</text>
+  <text x="750" y="284" class="label" text-anchor="middle">Solve</text>
+  <text x="750" y="294" class="label" text-anchor="middle">w1</text>
+  <text x="820" y="284" class="label" text-anchor="middle">Commit</text>
+  <text x="820" y="294" class="label" text-anchor="middle">w1</text>
+  <text x="890" y="284" class="label" text-anchor="middle">Solve</text>
+  <text x="890" y="294" class="label" text-anchor="middle">w2</text>
+  <text x="960" y="284" class="label" text-anchor="middle">Commit</text>
+  <text x="960" y="294" class="label" text-anchor="middle">w2</text>
+  <text x="1030" y="284" class="label" text-anchor="middle">prove</text>
+  <text x="1030" y="294" class="label" text-anchor="middle">_noir</text>
+
+  <!-- Peak annotation -->
+  <text x="1055" y="110" font-size="9" fill="#ef4444" font-family="system-ui" font-weight="600">peak</text>
+
+  <!-- Annotation -->
+  <text x="630" y="324" class="axis-label">Peak at prove_noir: R1CS + witness + transposed matrices + eq(α) all resident.</text>
+  <text x="630" y="336" class="axis-label">System-level peak: ~1.36 GB (includes runtime overhead, stack, allocator metadata).</text>
+</svg>
