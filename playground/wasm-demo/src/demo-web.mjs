@@ -5,7 +5,9 @@
  * 1. Load compiled Noir circuit
  * 2. Generate witness using @noir-lang/noir_js (local web bundles)
  * 3. Generate proof using ProveKit WASM
+ * 4. (Optional) Detect WebGPU for GPU-accelerated NTT
  */
+import { isWebGPUAvailable } from './webgpu-ntt.mjs';
 
 // DOM elements
 const logContainer = document.getElementById("logContainer");
@@ -292,6 +294,14 @@ async function initWasm() {
     }
 
     log("noir_js initialized");
+
+    if (isWebGPUAvailable()) {
+      log("WebGPU: Available — GPU NTT acceleration ready");
+      log("   → Run NTT benchmark: ntt-bench.html");
+    } else {
+      log("WebGPU: Not available (use Chrome 113+ for GPU acceleration)");
+    }
+
     updateStep(1, "Loaded", "success");
     runBtn.disabled = false;
     window.wasmReady = true;
