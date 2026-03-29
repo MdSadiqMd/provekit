@@ -358,13 +358,18 @@ async function buildShared() {
   }
   const vendorDir = join(DEMO_DIR, "vendor");
   const vendorMappings = [
-    { pkg: "@noir-lang/acvm_js", dest: "acvm_js" },
-    { pkg: "@noir-lang/noirc_abi", dest: "noirc_abi" },
+    { pkg: "@noir-lang/acvm_js", dest: "acvm_js", subdir: "web" },
+    { pkg: "@noir-lang/noirc_abi", dest: "noirc_abi", subdir: "web" },
   ];
-  for (const { pkg, dest } of vendorMappings) {
-    const srcDir = join(DEMO_DIR, "node_modules", pkg);
+  for (const { pkg, dest, subdir } of vendorMappings) {
+    // The web builds live in a "web/" subdirectory within each package
+    const srcDir = join(DEMO_DIR, "node_modules", pkg, subdir || "");
     const destDir = join(vendorDir, dest);
     if (!existsSync(destDir)) mkdirSync(destDir, { recursive: true });
+    if (!existsSync(srcDir)) {
+      logError(`Vendor source not found: ${srcDir}`);
+      process.exit(1);
+    }
     for (const entry of readdirSync(srcDir)) {
       if (entry.endsWith(".js") || entry.endsWith(".wasm") || entry.endsWith(".d.ts")) {
         copyFileSync(join(srcDir, entry), join(destDir, entry));
