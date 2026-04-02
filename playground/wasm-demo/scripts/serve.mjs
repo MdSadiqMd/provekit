@@ -27,6 +27,7 @@ const MIME_TYPES = {
   ".png": "image/png",
   ".jpg": "image/jpeg",
   ".svg": "image/svg+xml",
+  ".wgsl": "text/plain",
 };
 
 async function serveFile(res, filePath) {

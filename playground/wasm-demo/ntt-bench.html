@@ -3,640 +3,299 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ProveKit WebGPU NTT Benchmark</title>
+<title>ProveKit: CPU vs GPU NTT Prove Benchmark</title>
 <style>
   :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --border: #30363d;
-    --text: #e6edf3;
-    --text-dim: #8b949e;
-    --accent: #58a6ff;
-    --green: #3fb950;
-    --red: #f85149;
-    --yellow: #d29922;
-    --purple: #bc8cff;
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #e6edf3; --dim: #8b949e;
+    --accent: #58a6ff; --green: #3fb950; --red: #f85149; --yellow: #d29922;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
-    background: var(--bg);
-    color: var(--text);
-    padding: 24px;
-    max-width: 1100px;
-    margin: 0 auto;
+    background: var(--bg); color: var(--text);
+    padding: 24px; max-width: 960px; margin: 0 auto;
   }
-  h1 {
-    font-size: 1.5rem;
-    margin-bottom: 8px;
-    background: linear-gradient(135deg, var(--accent), var(--purple));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .subtitle { color: var(--text-dim); margin-bottom: 24px; font-size: 0.85rem; }
-  .status-bar {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 20px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 12px;
-  }
-  .status-item {
-    display: flex;
-    flex-direction: column;
-  }
-  .status-label { color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; }
-  .status-value { font-size: 1.1rem; font-weight: 600; margin-top: 4px; }
-  .status-value.ok { color: var(--green); }
-  .status-value.fail { color: var(--red); }
-  .status-value.pending { color: var(--yellow); }
-  .controls {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
-  button {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 0.85rem;
-    transition: all 0.15s;
-  }
-  button:hover { border-color: var(--accent); background: #1f2937; }
-  button:disabled { opacity: 0.4; cursor: not-allowed; }
-  button.primary {
-    background: linear-gradient(135deg, #1a3a5c, #2d1b69);
-    border-color: var(--accent);
-  }
-  .results-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
-  }
-  .results-table th, .results-table td {
-    text-align: right;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.85rem;
-  }
-  .results-table th {
-    color: var(--text-dim);
-    text-transform: uppercase;
-    font-size: 0.7rem;
-    font-weight: 600;
-  }
-  .results-table td:first-child, .results-table th:first-child { text-align: left; }
-  .speedup { color: var(--green); font-weight: 700; }
-  .slowdown { color: var(--red); font-weight: 700; }
-  .log-area {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px;
-    max-height: 400px;
-    overflow-y: auto;
-    font-size: 0.8rem;
-    line-height: 1.6;
-  }
-  .log-line { color: var(--text-dim); }
-  .log-line.success { color: var(--green); }
-  .log-line.error { color: var(--red); }
-  .log-line.info { color: var(--accent); }
-  .summary-card {
-    background: linear-gradient(135deg, #1a2332, #1a1a2e);
-    border: 1px solid var(--accent);
-    border-radius: 12px;
-    padding: 24px;
-    margin: 20px 0;
-    text-align: center;
-  }
-  .summary-card h2 { font-size: 1.2rem; margin-bottom: 8px; }
-  .summary-card .big-number {
-    font-size: 3rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--green), var(--accent));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .summary-card .explain { color: var(--text-dim); font-size: 0.85rem; margin-top: 8px; }
-  .bar-chart {
-    display: flex;
-    align-items: end;
-    gap: 4px;
-    height: 120px;
-    margin: 16px 0;
-    padding: 0 16px;
-  }
-  .bar-group {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
-    gap: 4px;
-  }
-  .bar-pair {
-    display: flex;
-    gap: 2px;
-    align-items: end;
-    width: 100%;
-    height: 100px;
-  }
+  h1 { font-size: 1.3rem; margin-bottom: 4px; color: var(--accent); }
+  .sub { color: var(--dim); margin-bottom: 18px; font-size: 0.82rem; }
   .bar {
-    flex: 1;
-    border-radius: 3px 3px 0 0;
-    min-height: 2px;
-    transition: height 0.3s;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px; margin-bottom: 14px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;
   }
-  .bar.js { background: var(--red); opacity: 0.8; }
-  .bar.gpu { background: var(--green); opacity: 0.8; }
-  .bar-label { font-size: 0.65rem; color: var(--text-dim); }
-  .legend {
-    display: flex;
-    gap: 16px;
-    justify-content: center;
-    font-size: 0.75rem;
-    color: var(--text-dim);
+  .si { display: flex; flex-direction: column; }
+  .sl { color: var(--dim); font-size: 0.68rem; text-transform: uppercase; }
+  .sv { font-size: 0.95rem; font-weight: 600; margin-top: 3px; }
+  .ok { color: var(--green); } .fail { color: var(--red); } .pend { color: var(--yellow); }
+  .ctrl { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+  button {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 9px 18px; border-radius: 6px; cursor: pointer;
+    font-family: inherit; font-size: 0.82rem;
   }
-  .legend span::before {
-    content: '';
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 2px;
-    margin-right: 4px;
-    vertical-align: middle;
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+  button.pri { background: linear-gradient(135deg,#1a3a5c,#2d1b69); border-color: var(--accent); }
+  select {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 9px 14px; border-radius: 6px; font-family: inherit; font-size: 0.82rem;
   }
-  .legend .js-legend::before { background: var(--red); }
-  .legend .gpu-legend::before { background: var(--green); }
 </style>
 </head>
 <body>
+<h1>ProveKit End-to-End Prove Benchmark: CPU vs GPU NTT</h1>
+<p class="sub">Measures actual proveBytes() wall-clock time with CPU NTT vs GPU NTT.
+  Proving runs on a Web Worker so GPU NTT's Atomics.wait() is allowed.</p>
 
-<h1>⚡ ProveKit WebGPU NTT Benchmark</h1>
-<p class="subtitle">BN254 scalar field NTT acceleration via WebGPU compute shaders</p>
+<div class="bar">
+  <div class="si"><span class="sl">Worker</span><span class="sv pend" id="sWasm">…</span></div>
+  <div class="si"><span class="sl">WebGPU</span><span class="sv pend" id="sGpu">…</span></div>
+  <div class="si"><span class="sl">Threads</span><span class="sv pend" id="sThreads">—</span></div>
+  <div class="si"><span class="sl">Circuit</span><span class="sv pend" id="sCircuit">—</span></div>
+  <div class="si"><span class="sl">CPU Prove</span><span class="sv pend" id="sCpu">—</span></div>
+  <div class="si"><span class="sl">GPU Prove</span><span class="sv pend" id="sGpuP">—</span></div>
+</div>
 
-<div class="status-bar">
-  <div class="status-item">
-    <span class="status-label">WebGPU</span>
-    <span class="status-value pending" id="gpuStatus">Detecting...</span>
-  </div>
-  <div class="status-item">
-    <span class="status-label">Field Tests</span>
-    <span class="status-value pending" id="fieldTestStatus">—</span>
-  </div>
-  <div class="status-item">
-    <span class="status-label">NTT Tests</span>
-    <span class="status-value pending" id="nttTestStatus">—</span>
-  </div>
-  <div class="status-item">
-    <span class="status-label">Best Speedup</span>
-    <span class="status-value pending" id="bestSpeedup">—</span>
+<div class="ctrl">
+  <select id="circuitSelect">
+    <option value="sha256">SHA256 (small)</option>
+    <option value="poseidon">Poseidon (medium)</option>
+    <option value="complete_age_check" selected>Complete Age Check (target)</option>
+  </select>
+  <button id="btnRun" class="pri" onclick="window._runBench()" disabled>Run Benchmark</button>
+  <span id="prog" style="color:var(--dim);font-size:0.78rem;"></span>
+</div>
+
+<div id="resPanel" style="display:none;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:18px;margin-bottom:14px;">
+  <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.82rem;">
+    <span style="color:var(--dim)">Circuit</span><span id="rCirc" style="font-weight:600">—</span></div>
+  <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.82rem;">
+    <span style="color:var(--dim)">Constraints</span><span id="rCon" style="font-weight:600">—</span></div>
+  <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.82rem;">
+    <span style="color:var(--dim)">Witness</span><span id="rWit" style="font-weight:600">—</span></div>
+  <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.82rem;">
+    <span style="color:var(--dim)">CPU NTT Prove</span><span id="rCpu" style="font-weight:600">—</span></div>
+  <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.82rem;">
+    <span style="color:var(--dim)">GPU NTT Prove</span><span id="rGpu" style="font-weight:600">—</span></div>
+  <div id="bigRes" style="text-align:center;padding:16px;margin-top:10px;border:2px solid var(--accent);border-radius:8px;">
+    <div id="bigNum" style="font-size:2.4rem;font-weight:800;">—</div>
+    <div style="color:var(--dim);font-size:0.82rem;margin-top:4px;">Improvement (GPU vs CPU NTT)</div>
   </div>
 </div>
 
-<div class="controls">
-  <button id="btnFieldTests" onclick="runFieldTests()" disabled>Run Field Tests</button>
-  <button id="btnNttTests" onclick="runNttTests()" disabled>Run NTT Tests</button>
-  <button id="btnBenchmark" class="primary" onclick="runBenchmark()" disabled>Run Benchmark</button>
-  <button id="btnAll" class="primary" onclick="runAll()" disabled>Run All</button>
-</div>
+<div id="logArea" style="background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:14px;max-height:500px;overflow-y:auto;font-size:0.76rem;line-height:1.6;"></div>
 
-<div id="summaryCard" class="summary-card" style="display:none;">
-  <h2>Projected Proving Speedup (Amdahl's Law)</h2>
-  <div class="big-number" id="projectedSpeedup">—</div>
-  <div class="explain">
-    NTT is 20.5% of proving time. GPU NTT speedup × Amdahl's Law = overall improvement.
-    <br>Target: ≥6% improvement on complete_age_check prove time.
-  </div>
-</div>
-
-<div id="chartArea" style="display:none;">
-  <div class="legend">
-    <span class="js-legend">JS Reference NTT</span>
-    <span class="gpu-legend">WebGPU NTT</span>
-  </div>
-  <div class="bar-chart" id="barChart"></div>
-</div>
-
-<table class="results-table" id="resultsTable" style="display:none;">
-  <thead>
-    <tr>
-      <th>NTT Size</th>
-      <th>Elements</th>
-      <th>JS (ms)</th>
-      <th>WebGPU (ms)</th>
-      <th>Speedup</th>
-      <th>Projected Prove Δ</th>
-    </tr>
-  </thead>
-  <tbody id="resultsBody"></tbody>
-</table>
-
-<div class="log-area" id="logArea"></div>
-
-<script type="module">
-import { WebGPUNTT, referenceNTT, generateTwiddles, isWebGPUAvailable, bigintToLimbs, limbsToBigint } from './src/webgpu-ntt.mjs';
-
-const BN254_P = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
-
-// Global state
-let gpu = null;
-
-function log(msg, type = '') {
-    const area = document.getElementById('logArea');
-    const line = document.createElement('div');
-    line.className = `log-line ${type}`;
-    line.textContent = `[${new Date().toISOString().slice(11,23)}] ${msg}`;
-    area.appendChild(line);
-    area.scrollTop = area.scrollHeight;
+<script type="importmap">
+{
+  "imports": {
+    "@noir-lang/acvm_js": "./vendor/acvm_js/acvm_js.js",
+    "@noir-lang/noirc_abi": "./vendor/noirc_abi/noirc_abi_wasm.js"
+  }
 }
-
-// ============================================================
-// Initialization
-// ============================================================
-async function init() {
-    log('Checking WebGPU support...');
-    
-    if (!isWebGPUAvailable()) {
-        document.getElementById('gpuStatus').textContent = 'Not Available';
-        document.getElementById('gpuStatus').className = 'status-value fail';
-        log('WebGPU is not available in this browser. Use Chrome 113+ or Edge 113+.', 'error');
-        // Still enable JS-only tests
-        document.getElementById('btnFieldTests').disabled = false;
-        document.getElementById('btnNttTests').disabled = false;
-        return;
-    }
-    
-    gpu = new WebGPUNTT();
-    const ok = await gpu.init();
-    
-    if (ok) {
-        document.getElementById('gpuStatus').textContent = 'Ready';
-        document.getElementById('gpuStatus').className = 'status-value ok';
-        log('WebGPU initialized successfully', 'success');
-        const info = gpu.getInfo();
-        log(`  Max storage buffer: ${(info.limits.maxStorageBufferBindingSize / 1024 / 1024).toFixed(0)} MB`);
-        log(`  Max workgroups/dim: ${info.limits.maxComputeWorkgroupsPerDimension}`);
-    } else {
-        document.getElementById('gpuStatus').textContent = 'Init Failed';
-        document.getElementById('gpuStatus').className = 'status-value fail';
-        log('WebGPU initialization failed', 'error');
-    }
-    
-    // Enable buttons
-    document.getElementById('btnFieldTests').disabled = false;
-    document.getElementById('btnNttTests').disabled = false;
-    document.getElementById('btnBenchmark').disabled = !ok;
-    document.getElementById('btnAll').disabled = !ok;
-}
-
-// ============================================================
-// Field arithmetic tests (JS-only, verifies limb conversion + arithmetic)
-// ============================================================
-window.runFieldTests = async function() {
-    log('--- Field Arithmetic Tests ---', 'info');
-    let passed = 0, failed = 0;
-    
-    // Test 1: Limb round-trip
-    const testValues = [
-        0n, 1n, 42n,
-        BN254_P - 1n,
-        BN254_P - 2n,
-        123456789012345678901234567890n,
-        21888242871839275222246405745257275088548364400416034343698204186575808495616n,
-    ];
-    
-    for (const val of testValues) {
-        const buf = new Uint32Array(9);
-        bigintToLimbs(val, buf, 0);
-        const recovered = limbsToBigint(buf, 0);
-        if (recovered === val) {
-            passed++;
-        } else {
-            log(`  FAIL: limb round-trip for ${val}: got ${recovered}`, 'error');
-            failed++;
-        }
-    }
-    
-    // Test 2: JS field arithmetic
-    const fieldTests = [
-        { a: 5n, b: 3n, expected_add: 8n, expected_sub: 2n, expected_mul: 15n },
-        { a: BN254_P - 1n, b: 1n, expected_add: 0n, expected_sub: BN254_P - 2n, expected_mul: BN254_P - 1n },
-        { a: BN254_P - 1n, b: BN254_P - 1n, expected_add: BN254_P - 2n, expected_sub: 0n, expected_mul: 1n },
-    ];
-    
-    for (const t of fieldTests) {
-        const add = (t.a + t.b) % BN254_P;
-        const sub = t.a >= t.b ? t.a - t.b : t.a - t.b + BN254_P;
-        const mul = (t.a * t.b) % BN254_P;
-        
-        if (add === t.expected_add) { passed++; } else { log(`  FAIL: add(${t.a}, ${t.b}) = ${add}, expected ${t.expected_add}`, 'error'); failed++; }
-        if (sub === t.expected_sub) { passed++; } else { log(`  FAIL: sub(${t.a}, ${t.b}) = ${sub}, expected ${t.expected_sub}`, 'error'); failed++; }
-        if (mul === t.expected_mul) { passed++; } else { log(`  FAIL: mul(${t.a}, ${t.b}) = ${mul}, expected ${t.expected_mul}`, 'error'); failed++; }
-    }
-    
-    // Test 3: Twiddle factor generation
-    try {
-        const tw4 = generateTwiddles(4);
-        if (tw4.length === 2 && tw4[0] === 1n) { passed++; }
-        else { log(`  FAIL: twiddles(4) unexpected: [${tw4.join(', ')}]`, 'error'); failed++; }
-        
-        const tw8 = generateTwiddles(8);
-        if (tw8.length === 4 && tw8[0] === 1n) { passed++; }
-        else { log(`  FAIL: twiddles(8)[0] = ${tw8[0]}, expected 1`, 'error'); failed++; }
-    } catch (e) {
-        log(`  FAIL: twiddle generation: ${e.message}`, 'error');
-        failed++;
-    }
-    
-    const status = document.getElementById('fieldTestStatus');
-    if (failed === 0) {
-        status.textContent = `${passed} ✓`;
-        status.className = 'status-value ok';
-        log(`Field tests: ${passed} passed, ${failed} failed`, 'success');
-    } else {
-        status.textContent = `${failed} ✗`;
-        status.className = 'status-value fail';
-        log(`Field tests: ${passed} passed, ${failed} failed`, 'error');
-    }
-};
-
-// ============================================================
-// NTT correctness tests (JS reference NTT)
-// ============================================================
-window.runNttTests = async function() {
-    log('--- NTT Correctness Tests ---', 'info');
-    let passed = 0, failed = 0;
-    
-    // Test small NTTs with reference implementation
-    for (const logN of [1, 2, 3, 4, 5, 8]) {
-        const n = 1 << logN;
-        const elements = Array.from({length: n}, (_, i) => BigInt(i + 1));
-        const twiddles = generateTwiddles(n);
-        
-        try {
-            const result = referenceNTT(elements, twiddles);
-            
-            // Verify: all results should be in valid field range
-            const allValid = result.every(r => r >= 0n && r < BN254_P);
-            if (allValid) {
-                passed++;
-                log(`  NTT(2^${logN}=${n}): ✓ all ${n} elements in valid range`);
-            } else {
-                failed++;
-                log(`  FAIL: NTT(2^${logN}): elements out of range`, 'error');
-            }
-        } catch (e) {
-            failed++;
-            log(`  FAIL: NTT(2^${logN}): ${e.message}`, 'error');
-        }
-    }
-    
-    // Test NTT linearity: NTT(a + b) = NTT(a) + NTT(b)
-    const n = 16;
-    const a = Array.from({length: n}, (_, i) => BigInt(i + 1));
-    const b = Array.from({length: n}, (_, i) => BigInt(i * 3 + 7));
-    const ab = a.map((ai, i) => (ai + b[i]) % BN254_P);
-    const twiddles = generateTwiddles(n);
-    
-    const nttA = referenceNTT(a, twiddles);
-    const nttB = referenceNTT(b, twiddles);
-    const nttAB = referenceNTT(ab, twiddles);
-    const nttAplusB = nttA.map((ai, i) => (ai + nttB[i]) % BN254_P);
-    
-    const linearityOk = nttAB.every((v, i) => v === nttAplusB[i]);
-    if (linearityOk) {
-        passed++;
-        log('  NTT linearity: ✓ NTT(a+b) = NTT(a) + NTT(b)');
-    } else {
-        failed++;
-        log('  FAIL: NTT linearity violated', 'error');
-    }
-    
-    // If GPU available, test GPU NTT against JS NTT
-    if (gpu && gpu.available) {
-        for (const logN of [2, 4, 6, 8, 10]) {
-            const n = 1 << logN;
-            const elements = Array.from({length: n}, (_, i) => BigInt(i * 17 + 3) % BN254_P);
-            const tw = generateTwiddles(n);
-            
-            try {
-                const jsResult = referenceNTT(elements, tw);
-                const gpuResult = await gpu.ntt(elements, tw);
-                
-                let match = true;
-                for (let i = 0; i < n; i++) {
-                    if (jsResult[i] !== gpuResult[i]) {
-                        match = false;
-                        log(`  FAIL: GPU NTT(2^${logN})[${i}]: JS=${jsResult[i]}, GPU=${gpuResult[i]}`, 'error');
-                        break;
-                    }
-                }
-                
-                if (match) {
-                    passed++;
-                    log(`  GPU NTT(2^${logN}=${n}): ✓ matches JS reference`);
-                } else {
-                    failed++;
-                }
-            } catch (e) {
-                failed++;
-                log(`  FAIL: GPU NTT(2^${logN}): ${e.message}`, 'error');
-            }
-        }
-    } else {
-        log('  Skipping GPU NTT tests (WebGPU not available)', 'info');
-    }
-    
-    const status = document.getElementById('nttTestStatus');
-    if (failed === 0) {
-        status.textContent = `${passed} ✓`;
-        status.className = 'status-value ok';
-        log(`NTT tests: ${passed} passed, ${failed} failed`, 'success');
-    } else {
-        status.textContent = `${failed} ✗`;
-        status.className = 'status-value fail';
-        log(`NTT tests: ${passed} passed, ${failed} failed`, 'error');
-    }
-};
-
-// ============================================================
-// Performance benchmark
-// ============================================================
-window.runBenchmark = async function() {
-    if (!gpu || !gpu.available) {
-        log('WebGPU not available for benchmarking', 'error');
-        return;
-    }
-    
-    log('--- NTT Performance Benchmark ---', 'info');
-    log('Warming up GPU...', 'info');
-    
-    // Warmup
-    const warmElements = Array.from({length: 1024}, () => BigInt(Math.floor(Math.random() * 1000)));
-    const warmTwiddles = generateTwiddles(1024);
-    await gpu.ntt(warmElements, warmTwiddles);
-    
-    const results = [];
-    const sizes = [10, 12, 14, 16, 18, 20]; // 2^10 through 2^20
-    
-    // Disable buttons during benchmark
-    document.querySelectorAll('button').forEach(b => b.disabled = true);
-    
-    for (const logN of sizes) {
-        const n = 1 << logN;
-        log(`Benchmarking NTT size 2^${logN} = ${n.toLocaleString()}...`);
-        
-        const elements = Array.from({length: n}, (_, i) => BigInt(i * 31 + 7) % BN254_P);
-        const twiddles = generateTwiddles(n);
-        
-        // JS benchmark (fewer iterations for large sizes)
-        const jsIters = n >= 65536 ? 1 : n >= 4096 ? 3 : 5;
-        const jsStart = performance.now();
-        for (let i = 0; i < jsIters; i++) {
-            referenceNTT([...elements], twiddles);
-        }
-        const jsTotalMs = performance.now() - jsStart;
-        const jsAvgMs = jsTotalMs / jsIters;
-        
-        // GPU benchmark
-        const gpuIters = n >= 65536 ? 2 : n >= 4096 ? 5 : 10;
-        const gpuStart = performance.now();
-        for (let i = 0; i < gpuIters; i++) {
-            await gpu.ntt(elements, twiddles);
-        }
-        const gpuTotalMs = performance.now() - gpuStart;
-        const gpuAvgMs = gpuTotalMs / gpuIters;
-        
-        const speedup = jsAvgMs / gpuAvgMs;
-        
-        // Amdahl's law: NTT is 20.5% of total proving time
-        const nttFraction = 0.205;
-        const overallSpeedup = 1 / (1 - nttFraction + nttFraction / speedup);
-        const proveDelta = ((overallSpeedup - 1) * 100).toFixed(1);
-        
-        results.push({ logN, n, jsAvgMs, gpuAvgMs, speedup, proveDelta, overallSpeedup });
-        
-        log(`  JS: ${jsAvgMs.toFixed(1)}ms | GPU: ${gpuAvgMs.toFixed(1)}ms | Speedup: ${speedup.toFixed(2)}× | Prove Δ: ${proveDelta}%`);
-    }
-    
-    // Display results table
-    displayResults(results);
-    
-    // Re-enable buttons
-    document.querySelectorAll('button').forEach(b => b.disabled = false);
-    document.getElementById('btnBenchmark').disabled = !gpu.available;
-    
-    log('Benchmark complete!', 'success');
-};
-
-function displayResults(results) {
-    const table = document.getElementById('resultsTable');
-    const body = document.getElementById('resultsBody');
-    body.innerHTML = '';
-    table.style.display = 'table';
-    
-    let bestSpeedup = 0;
-    let bestResult = null;
-    
-    for (const r of results) {
-        const row = document.createElement('tr');
-        const speedupClass = r.speedup >= 1 ? 'speedup' : 'slowdown';
-        row.innerHTML = `
-            <td>2<sup>${r.logN}</sup></td>
-            <td>${r.n.toLocaleString()}</td>
-            <td>${r.jsAvgMs.toFixed(1)}</td>
-            <td>${r.gpuAvgMs.toFixed(1)}</td>
-            <td class="${speedupClass}">${r.speedup.toFixed(2)}×</td>
-            <td class="${r.overallSpeedup > 1.06 ? 'speedup' : ''}">${r.proveDelta}%</td>
-        `;
-        body.appendChild(row);
-        
-        if (r.speedup > bestSpeedup) {
-            bestSpeedup = r.speedup;
-            bestResult = r;
-        }
-    }
-    
-    // Update best speedup in status bar
-    const bestEl = document.getElementById('bestSpeedup');
-    if (bestResult) {
-        bestEl.textContent = `${bestSpeedup.toFixed(1)}× (2^${bestResult.logN})`;
-        bestEl.className = bestSpeedup >= 1.3 ? 'status-value ok' : 'status-value pending';
-    }
-    
-    // Show summary card
-    if (bestResult) {
-        const card = document.getElementById('summaryCard');
-        card.style.display = 'block';
-        document.getElementById('projectedSpeedup').textContent = 
-            `${bestResult.proveDelta}% faster proving`;
-    }
-    
-    // Draw bar chart
-    drawBarChart(results);
-}
-
-function drawBarChart(results) {
-    const container = document.getElementById('chartArea');
-    container.style.display = 'block';
-    const chart = document.getElementById('barChart');
-    chart.innerHTML = '';
-    
-    const maxMs = Math.max(...results.map(r => Math.max(r.jsAvgMs, r.gpuAvgMs)));
-    
-    for (const r of results) {
-        const group = document.createElement('div');
-        group.className = 'bar-group';
-        
-        const pair = document.createElement('div');
-        pair.className = 'bar-pair';
-        
-        const jsBar = document.createElement('div');
-        jsBar.className = 'bar js';
-        jsBar.style.height = `${Math.max(2, (r.jsAvgMs / maxMs) * 100)}px`;
-        jsBar.title = `JS: ${r.jsAvgMs.toFixed(1)}ms`;
-        
-        const gpuBar = document.createElement('div');
-        gpuBar.className = 'bar gpu';
-        gpuBar.style.height = `${Math.max(2, (r.gpuAvgMs / maxMs) * 100)}px`;
-        gpuBar.title = `GPU: ${r.gpuAvgMs.toFixed(1)}ms`;
-        
-        pair.appendChild(jsBar);
-        pair.appendChild(gpuBar);
-        
-        const label = document.createElement('div');
-        label.className = 'bar-label';
-        label.textContent = `2^${r.logN}`;
-        
-        group.appendChild(pair);
-        group.appendChild(label);
-        chart.appendChild(group);
-    }
-}
-
-// ============================================================
-// Run all tests
-// ============================================================
-window.runAll = async function() {
-    await window.runFieldTests();
-    await window.runNttTests();
-    await window.runBenchmark();
-};
-
-// Initialize
-init();
 </script>
 
+<script type="module">
+import { initNoir, Noir, decompressWitness } from './noir-web/noir-init.mjs';
+
+const $ = id => document.getElementById(id);
+const logArea = $('logArea');
+
+function log(msg, cls = '') {
+  const d = document.createElement('div');
+  d.style.color = cls==='ok'?'var(--green)':cls==='err'?'var(--red)':
+    cls==='info'?'var(--accent)':cls==='warn'?'var(--yellow)':'var(--dim)';
+  d.style.whiteSpace = 'pre-wrap';
+  d.textContent = `[${new Date().toISOString().slice(11,23)}] ${msg}`;
+  logArea.appendChild(d);
+  logArea.scrollTop = logArea.scrollHeight;
+}
+function prog(t) { $('prog').textContent = t; }
+
+function convertWitnessMap(wm) {
+  const r = {};
+  if (wm instanceof Map) { for (const [k,v] of wm.entries()) r[k]=v; }
+  else { for (const [k,v] of Object.entries(wm)) r[Number(k)]=v; }
+  return r;
+}
+
+/** Send a message to the worker and wait for a response. */
+function workerCall(worker, msg, transfer) {
+  return new Promise((resolve, reject) => {
+    const handler = (e) => {
+      worker.removeEventListener('message', handler);
+      if (e.data.type === 'error') reject(new Error(e.data.message));
+      else resolve(e.data);
+    };
+    worker.addEventListener('message', handler);
+    if (transfer) worker.postMessage(msg, transfer);
+    else worker.postMessage(msg);
+  });
+}
+
+// ── Main benchmark ──
+window._runBench = async function() {
+  $('btnRun').disabled = true;
+  logArea.innerHTML = '';
+  $('resPanel').style.display = 'none';
+  for (const id of ['sCpu','sGpuP']) { $(id).textContent='—'; $(id).className='sv pend'; }
+
+  const circuit = $('circuitSelect').value;
+  log(`=== Benchmark: ${circuit} ===`, 'info');
+
+  try {
+    // 1. Load artifacts on main thread
+    const base = `artifacts/${circuit}/`;
+    log(`Loading artifacts from ${base}...`, 'info');
+    prog('Loading artifacts...');
+
+    const [proverResp, inputsResp] = await Promise.all([
+      fetch(base + 'prover.pkp'), fetch(base + 'inputs.json'),
+    ]);
+    if (!proverResp.ok) throw new Error(`prover.pkp not found. Run: npm run setup`);
+    if (!inputsResp.ok) throw new Error(`inputs.json not found. Run: npm run setup`);
+
+    const proverBuf = await proverResp.arrayBuffer();
+    const inputs = await inputsResp.json();
+    log(`Prover artifact: ${(proverBuf.byteLength/1024/1024).toFixed(1)} MB`);
+
+    // 2. Extract circuit info (main thread, temporary WASM load)
+    log('Loading WASM to extract circuit info...', 'info');
+    // Stub GPU NTT externs so wasm-bindgen doesn't throw if they're called
+    if (typeof globalThis.gpuNttAvailable === 'undefined') {
+      globalThis.gpuNttAvailable = () => false;
+      globalThis.gpuNttComputeSync = () => { throw new Error('not available'); };
+    }
+    const tmpWasm = await import('./pkg/provekit_wasm.js');
+    const tmpBin = await (await fetch('pkg/provekit_wasm_bg.wasm')).arrayBuffer();
+    await tmpWasm.default(tmpBin);
+    const tmpProver = new tmpWasm.Prover(new Uint8Array(proverBuf));
+    const numCon = tmpProver.getNumConstraints();
+    const numWit = tmpProver.getNumWitnesses();
+    const circBytes = tmpProver.getCircuit();
+    const circuitJson = JSON.parse(new TextDecoder().decode(circBytes));
+    log(`Circuit: ${numCon.toLocaleString()} constraints, ${numWit.toLocaleString()} witnesses`);
+    $('sCircuit').textContent = `${(numCon/1000).toFixed(0)}K`; $('sCircuit').className='sv ok';
+    $('rCirc').textContent = circuit;
+    $('rCon').textContent = numCon.toLocaleString();
+
+    // 3. Generate witness (main thread — no Atomics.wait needed)
+    log('Initializing noir_js...', 'info');
+    prog('Generating witness...');
+    await initNoir();
+    const noir = new Noir(circuitJson);
+    const wt0 = performance.now();
+    const { witness: compressed } = await noir.execute(inputs);
+    const stack = decompressWitness(compressed);
+    const witnessObj = convertWitnessMap(stack[0].witness);
+    const witMs = performance.now() - wt0;
+    const wSize = Object.keys(witnessObj).length;
+    log(`Witness: ${wSize.toLocaleString()} elements in ${(witMs/1000).toFixed(2)}s`, 'ok');
+    $('rWit').textContent = `${wSize.toLocaleString()} (${(witMs/1000).toFixed(2)}s)`;
+
+    // 4. Spawn worker, init WASM + thread pool
+    log('Spawning prove worker...', 'info');
+    prog('Initializing worker...');
+    const worker = new Worker('./src/prove-worker.mjs', { type: 'module' });
+    const initRes = await workerCall(worker, { type: 'init' });
+    const threads = initRes.threads;
+    log(`Worker ready: ${threads} thread(s)`, 'ok');
+    $('sWasm').textContent = 'Ready'; $('sWasm').className = 'sv ok';
+    $('sThreads').textContent = threads; $('sThreads').className = 'sv ok';
+
+    // 5. CPU NTT prove
+    log('\n── Phase 1: CPU NTT ──', 'info');
+    prog('Registering CPU NTT...');
+    await workerCall(worker, { type: 'register-cpu-ntt' });
+    log('CPU NTT engine registered');
+
+    prog('Proving with CPU NTT...');
+    $('sCpu').textContent = '⏳';
+    const cpuRes = await workerCall(worker,
+      { type: 'prove', proverBuf: proverBuf.slice(0), witness: witnessObj });
+    const cpuMs = cpuRes.ms;
+    log(`[CPU] Prove: ${(cpuMs/1000).toFixed(2)}s, proof ${(cpuRes.proofSize/1024).toFixed(1)} KB`, 'ok');
+    $('sCpu').textContent = `${(cpuMs/1000).toFixed(2)}s`; $('sCpu').className = 'sv ok';
+    $('rCpu').textContent = `${(cpuMs/1000).toFixed(2)}s`;
+
+    // 6. GPU NTT prove
+    let gpuMs = null;
+    log('\n── Phase 2: GPU NTT ──', 'info');
+
+    // Initialize WebGPU on the MAIN THREAD (workers don't have navigator.gpu)
+    prog('Initializing WebGPU on main thread...');
+    let mainGpuReady = false;
+    try {
+      const { initGpuNtt } = await import('./src/webgpu-ntt-bridge.mjs');
+      mainGpuReady = await initGpuNtt();
+    } catch (e) {
+      log(`WebGPU init failed: ${e.message}`, 'warn');
+    }
+
+    // Tell the worker whether GPU is ready — it will set up delegation functions
+    const gpuRes = await workerCall(worker, { type: 'init-gpu', gpuReady: mainGpuReady });
+
+    if (gpuRes.available) {
+      $('sGpu').textContent = 'Ready'; $('sGpu').className = 'sv ok';
+      log('WebGPU bridge initialized in worker', 'ok');
+
+      prog('Registering GPU NTT...');
+      const nttRes = await workerCall(worker, { type: 'register-gpu-ntt' });
+      log(`GPU NTT engine registered (${nttRes.engine})`, 'ok');
+
+      prog('Proving with GPU NTT...');
+      $('sGpuP').textContent = '⏳';
+      const gpuProveRes = await workerCall(worker,
+        { type: 'prove', proverBuf: proverBuf.slice(0), witness: witnessObj });
+      gpuMs = gpuProveRes.ms;
+      log(`[GPU] Prove: ${(gpuMs/1000).toFixed(2)}s, proof ${(gpuProveRes.proofSize/1024).toFixed(1)} KB`, 'ok');
+      $('sGpuP').textContent = `${(gpuMs/1000).toFixed(2)}s`; $('sGpuP').className = 'sv ok';
+      $('rGpu').textContent = `${(gpuMs/1000).toFixed(2)}s`;
+    } else {
+      $('sGpu').textContent = 'N/A'; $('sGpu').className = 'sv fail';
+      log('WebGPU not available in worker — GPU benchmark skipped', 'warn');
+      $('sGpuP').textContent = 'N/A'; $('rGpu').textContent = 'N/A';
+    }
+
+    // 7. Results
+    worker.terminate();
+    log('\n── Results ──', 'info');
+    log(`CPU NTT prove: ${(cpuMs/1000).toFixed(2)}s`);
+    if (gpuMs !== null) {
+      log(`GPU NTT prove: ${(gpuMs/1000).toFixed(2)}s`);
+      const imp = ((cpuMs - gpuMs) / cpuMs * 100);
+      const ok = imp > 0;
+      log(`Improvement: ${ok?'+':''}${imp.toFixed(1)}%`, ok ? 'ok' : 'err');
+      log(`Target: ≥6%`, imp >= 6 ? 'ok' : 'warn');
+
+      $('bigNum').textContent = `${ok?'+':''}${imp.toFixed(1)}%`;
+      $('bigNum').style.color = imp>=6?'var(--green)':imp>0?'var(--yellow)':'var(--red)';
+      $('bigRes').style.borderColor = imp>=6?'var(--green)':imp>0?'var(--yellow)':'var(--red)';
+    } else {
+      $('bigNum').textContent = 'N/A (no WebGPU)';
+      $('bigNum').style.color = 'var(--dim)';
+    }
+
+    $('resPanel').style.display = 'block';
+    prog('Done');
+    log('\nBenchmark complete.', 'ok');
+
+  } catch (e) {
+    log(`ERROR: ${e.message}`, 'err');
+    console.error(e);
+    prog('Failed');
+  }
+  $('btnRun').disabled = false;
+};
+
+// Auto-detect WebGPU on page load
+if (navigator.gpu) {
+  $('sGpu').textContent = 'Available'; $('sGpu').className = 'sv ok';
+} else {
+  $('sGpu').textContent = 'Not Available'; $('sGpu').className = 'sv fail';
+}
+$('btnRun').disabled = false;
+</script>
 </body>
 </html>

@@ -29,6 +29,7 @@ const WASM_PKG_DIR = join(ROOT_DIR, "tooling/provekit-wasm/pkg");
 const CIRCUITS = [
   { name: "sha256",   path: join(ROOT_DIR, "noir-examples/noir_sha256") },
   { name: "poseidon", path: join(ROOT_DIR, "noir-examples/poseidon-rounds") },
+  { name: "complete_age_check", path: join(ROOT_DIR, "noir-examples/noir-passport-monolithic/complete_age_check") },
 ];
 
 // Colors for console output
