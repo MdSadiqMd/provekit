@@ -48,10 +48,25 @@ pub fn register_ntt() {
     use std::sync::{Arc, Once};
     static INIT: Once = Once::new();
     INIT.call_once(|| {
-        // Register NTT for polynomial operations
-        let ntt: Arc<dyn whir::algebra::ntt::ReedSolomon<FieldElement>> =
-            Arc::new(whir::algebra::ntt::NttEngine::<FieldElement>::new_from_fftfield());
-        whir::algebra::ntt::NTT.insert(ntt);
+        // On WASM, initNtt() may have already registered a GPU-backed NTT.
+        // Only register the default CPU NTT if nothing has been registered yet.
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let ntt: Arc<dyn whir::algebra::ntt::ReedSolomon<FieldElement>> =
+                Arc::new(whir::algebra::ntt::ArkNtt::<FieldElement>::default());
+            whir::algebra::ntt::NTT.insert(ntt);
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            // On WASM, only register CPU NTT if GPU NTT wasn't already registered.
+            // The GPU NTT is registered by initNtt() called from JS before prove.
+            if !whir::algebra::ntt::NTT.contains::<FieldElement>() {
+                let ntt: Arc<dyn whir::algebra::ntt::ReedSolomon<FieldElement>> =
+                    Arc::new(whir::algebra::ntt::ArkNtt::<FieldElement>::default());
+                whir::algebra::ntt::NTT.insert(ntt);
+            }
+        }
 
         // Register Skyscraper (ProveKit-specific); WHIR's built-in engines
         // (SHA2, Keccak, Blake3, etc.) are pre-registered via whir::hash::ENGINES.
