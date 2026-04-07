@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProveKit: CPU vs GPU NTT Prove Benchmark</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #e6edf3; --dim: #8b949e;
+    --accent: #58a6ff; --green: #3fb950; --red: #f85149; --yellow: #d29922;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+    background: var(--bg); color: var(--text);
+    padding: 24px; max-width: 960px; margin: 0 auto;
+  }
+  h1 { font-size: 1.3rem; margin-bottom: 4px; color: var(--accent); }
+  .sub { color: var(--dim); margin-bottom: 18px; font-size: 0.82rem; }
+  .bar {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px; margin-bottom: 14px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;
+  }
+  .si { display: flex; flex-direction: column; }
+  .sl { color: var(--dim); font-size: 0.68rem; text-transform: uppercase; }
+  .sv { font-size: 0.95rem; font-weight: 600; margin-top: 3px; }
+  .ok { color: var(--green); } .fail { color: var(--red); } .pend { color: var(--yellow); }
+  .ctrl { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+  button {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 9px 18px; border-radius: 6px; cursor: pointer;
+    font-family: inherit; font-size: 0.82rem;
+  }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+  button.pri { background: linear-gradient(135deg,#1a3a5c,#2d1b69); border-color: var(--accent); }
+  select {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 9px 14px; border-radius: 6px; font-family: inherit; font-size: 0.82rem;
+  }
+</style>
+</head>
+<body>
+<h1>ProveKit End-to-End Prove Benchmark: CPU vs GPU NTT</h1>
+<p class="sub">Measures actual proveBytes() wall-clock time with CPU NTT vs GPU NTT.
+  Proving runs on a Web Worker so GPU NTT's Atomics.wait() is allowed.</p>
+
+<div class="bar">
+  <div class="si"><span class="sl">Worker</span><span class="sv pend" id="sWasm">…</span></div>
+  <div class="si"><span class="sl">WebGPU</span><span class="sv pend" id="sGpu">…</span></div>
+  <div class="si"><span class="sl">Threads</span><span class="sv pend" id="sThreads">—</span></div>
+  <div class="si"><span class="sl">Circuit</span><span class="sv pend" id="sCircuit">—</span></div>
+  <div class="si"><span class="sl">CPU Prove</span><span class="sv pend" id="sCpu">—</span></div>
+  <div class="si"><span class="sl">GPU Prove</span><span class="sv pend" id="sGpuP">—</span></div>
+</div>
+
+<div class="ctrl">
+  <select id="circuitSelect">
+    <option value="sha256">SHA256 (small)</option>
+    <option value="poseidon">Poseidon (medium)</option>
+    <option value="complete_age_check" selected>Complete Age Check (target)</option>
+  </select>
+  <button id="btnRun" class="pri" onclick="window._runBench()" disabled>Run Benchmark</button>
+  <span id="prog" style="color:var(--dim);font-size:0.78rem;"></span>
+</div>
+
+<div id="resPanel" style="display:none;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:18px;margin-bottom:14px;">
+  <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.82rem;">
+    <span style="color:var(--dim)">Circuit</span><span id="rCirc" style="font-weight:600">—</span></div>
+  <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.82rem;">
+    <span style="color:var(--dim)">Constraints</span><span id="rCon" style="font-weight:600">—</span></div>
+  <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.82rem;">
+    <span style="color:var(--dim)">Witness</span><span id="rWit" style="font-weight:600">—</span></div>
+  <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.82rem;">
+    <span style="color:var(--dim)">CPU NTT Prove</span><span id="rCpu" style="font-weight:600">—</span></div>
+  <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.82rem;">
+    <span style="color:var(--dim)">GPU NTT Prove</span><span id="rGpu" style="font-weight:600">—</span></div>
+  <div id="bigRes" style="text-align:center;padding:16px;margin-top:10px;border:2px solid var(--accent);border-radius:8px;">
+    <div id="bigNum" style="font-size:2.4rem;font-weight:800;">—</div>
+    <div style="color:var(--dim);font-size:0.82rem;margin-top:4px;">Improvement (GPU vs CPU NTT)</div>
+  </div>
+</div>
+
+<div id="logArea" style="background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:14px;max-height:500px;overflow-y:auto;font-size:0.76rem;line-height:1.6;"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "@noir-lang/acvm_js": "./vendor/acvm_js/acvm_js.js",
+    "@noir-lang/noirc_abi": "./vendor/noirc_abi/noirc_abi_wasm.js"
+  }
+}
+</script>
+
+<script type="module">
+import { initNoir, Noir, decompressWitness } from './noir-web/noir-init.mjs';
+
+const $ = id => document.getElementById(id);
+const logArea = $('logArea');
+
+function log(msg, cls = '') {
+  const d = document.createElement('div');
+  d.style.color = cls==='ok'?'var(--green)':cls==='err'?'var(--red)':
+    cls==='info'?'var(--accent)':cls==='warn'?'var(--yellow)':'var(--dim)';
+  d.style.whiteSpace = 'pre-wrap';
+  d.textContent = `[${new Date().toISOString().slice(11,23)}] ${msg}`;
+  logArea.appendChild(d);
+  logArea.scrollTop = logArea.scrollHeight;
+}
+function prog(t) { $('prog').textContent = t; }
+
+function convertWitnessMap(wm) {
+  const r = {};
+  if (wm instanceof Map) { for (const [k,v] of wm.entries()) r[k]=v; }
+  else { for (const [k,v] of Object.entries(wm)) r[Number(k)]=v; }
+  return r;
+}
+
+/** Send a message to the worker and wait for a response. */
+function workerCall(worker, msg, transfer) {
+  return new Promise((resolve, reject) => {
+    const handler = (e) => {
+      worker.removeEventListener('message', handler);
+      if (e.data.type === 'error') reject(new Error(e.data.message));
+      else resolve(e.data);
+    };
+    worker.addEventListener('message', handler);
+    if (transfer) worker.postMessage(msg, transfer);
+    else worker.postMessage(msg);
+  });
+}
+
+// ── Main benchmark ──
+window._runBench = async function() {
+  $('btnRun').disabled = true;
+  logArea.innerHTML = '';
+  $('resPanel').style.display = 'none';
+  for (const id of ['sCpu','sGpuP']) { $(id).textContent='—'; $(id).className='sv pend'; }
+
+  const circuit = $('circuitSelect').value;
+  log(`=== Benchmark: ${circuit} ===`, 'info');
+
+  try {
+    // 1. Load artifacts on main thread
+    const base = `artifacts/${circuit}/`;
+    log(`Loading artifacts from ${base}...`, 'info');
+    prog('Loading artifacts...');
+
+    const [proverResp, inputsResp] = await Promise.all([
+      fetch(base + 'prover.pkp'), fetch(base + 'inputs.json'),
+    ]);
+    if (!proverResp.ok) throw new Error(`prover.pkp not found. Run: npm run setup`);
+    if (!inputsResp.ok) throw new Error(`inputs.json not found. Run: npm run setup`);
+
+    const proverBuf = await proverResp.arrayBuffer();
+    const inputs = await inputsResp.json();
+    log(`Prover artifact: ${(proverBuf.byteLength/1024/1024).toFixed(1)} MB`);
+
+    // 2. Extract circuit info (main thread, temporary WASM load)
+    log('Loading WASM to extract circuit info...', 'info');
+    // Stub GPU NTT externs so wasm-bindgen doesn't throw if they're called
+    if (typeof globalThis.gpuNttAvailable === 'undefined') {
+      globalThis.gpuNttAvailable = () => false;
+      globalThis.gpuNttComputeSync = () => { throw new Error('not available'); };
+    }
+    const tmpWasm = await import('./pkg/provekit_wasm.js');
+    const tmpBin = await (await fetch('pkg/provekit_wasm_bg.wasm')).arrayBuffer();
+    await tmpWasm.default(tmpBin);
+    const tmpProver = new tmpWasm.Prover(new Uint8Array(proverBuf));
+    const numCon = tmpProver.getNumConstraints();
+    const numWit = tmpProver.getNumWitnesses();
+    const circBytes = tmpProver.getCircuit();
+    const circuitJson = JSON.parse(new TextDecoder().decode(circBytes));
+    log(`Circuit: ${numCon.toLocaleString()} constraints, ${numWit.toLocaleString()} witnesses`);
+    $('sCircuit').textContent = `${(numCon/1000).toFixed(0)}K`; $('sCircuit').className='sv ok';
+    $('rCirc').textContent = circuit;
+    $('rCon').textContent = numCon.toLocaleString();
+
+    // 3. Generate witness (main thread — no Atomics.wait needed)
+    log('Initializing noir_js...', 'info');
+    prog('Generating witness...');
+    await initNoir();
+    const noir = new Noir(circuitJson);
+    const wt0 = performance.now();
+    const { witness: compressed } = await noir.execute(inputs);
+    const stack = decompressWitness(compressed);
+    const witnessObj = convertWitnessMap(stack[0].witness);
+    const witMs = performance.now() - wt0;
+    const wSize = Object.keys(witnessObj).length;
+    log(`Witness: ${wSize.toLocaleString()} elements in ${(witMs/1000).toFixed(2)}s`, 'ok');
+    $('rWit').textContent = `${wSize.toLocaleString()} (${(witMs/1000).toFixed(2)}s)`;
+
+    // 4. Spawn worker, init WASM + thread pool
+    log('Spawning prove worker...', 'info');
+    prog('Initializing worker...');
+    const worker = new Worker('./src/prove-worker.mjs', { type: 'module' });
+    const initRes = await workerCall(worker, { type: 'init' });
+    const threads = initRes.threads;
+    log(`Worker ready: ${threads} thread(s)`, 'ok');
+    $('sWasm').textContent = 'Ready'; $('sWasm').className = 'sv ok';
+    $('sThreads').textContent = threads; $('sThreads').className = 'sv ok';
+
+    // 5. CPU NTT prove
+    log('\n── Phase 1: CPU NTT ──', 'info');
+    prog('Registering CPU NTT...');
+    await workerCall(worker, { type: 'register-cpu-ntt' });
+    log('CPU NTT engine registered');
+
+    prog('Proving with CPU NTT...');
+    $('sCpu').textContent = '⏳';
+    const cpuRes = await workerCall(worker,
+      { type: 'prove', proverBuf: proverBuf.slice(0), witness: witnessObj });
+    const cpuMs = cpuRes.ms;
+    log(`[CPU] Prove: ${(cpuMs/1000).toFixed(2)}s, proof ${(cpuRes.proofSize/1024).toFixed(1)} KB`, 'ok');
+    $('sCpu').textContent = `${(cpuMs/1000).toFixed(2)}s`; $('sCpu').className = 'sv ok';
+    $('rCpu').textContent = `${(cpuMs/1000).toFixed(2)}s`;
+
+    // 6. GPU NTT prove
+    let gpuMs = null;
+    log('\n── Phase 2: GPU NTT ──', 'info');
+
+    // Initialize WebGPU on the MAIN THREAD (workers don't have navigator.gpu)
+    prog('Initializing WebGPU on main thread...');
+    let mainGpuReady = false;
+    try {
+      const { initGpuNtt } = await import('./src/webgpu-ntt-bridge.mjs');
+      mainGpuReady = await initGpuNtt();
+    } catch (e) {
+      log(`WebGPU init failed: ${e.message}`, 'warn');
+    }
+
+    // Tell the worker whether GPU is ready — it will set up delegation functions
+    const gpuRes = await workerCall(worker, { type: 'init-gpu', gpuReady: mainGpuReady });
+
+    if (gpuRes.available) {
+      $('sGpu').textContent = 'Ready'; $('sGpu').className = 'sv ok';
+      log('WebGPU bridge initialized in worker', 'ok');
+
+      prog('Registering GPU NTT...');
+      const nttRes = await workerCall(worker, { type: 'register-gpu-ntt' });
+      log(`GPU NTT engine registered (${nttRes.engine})`, 'ok');
+
+      prog('Proving with GPU NTT...');
+      $('sGpuP').textContent = '⏳';
+      const gpuProveRes = await workerCall(worker,
+        { type: 'prove', proverBuf: proverBuf.slice(0), witness: witnessObj });
+      gpuMs = gpuProveRes.ms;
+      log(`[GPU] Prove: ${(gpuMs/1000).toFixed(2)}s, proof ${(gpuProveRes.proofSize/1024).toFixed(1)} KB`, 'ok');
+      $('sGpuP').textContent = `${(gpuMs/1000).toFixed(2)}s`; $('sGpuP').className = 'sv ok';
+      $('rGpu').textContent = `${(gpuMs/1000).toFixed(2)}s`;
+    } else {
+      $('sGpu').textContent = 'N/A'; $('sGpu').className = 'sv fail';
+      log('WebGPU not available in worker — GPU benchmark skipped', 'warn');
+      $('sGpuP').textContent = 'N/A'; $('rGpu').textContent = 'N/A';
+    }
+
+    // 7. Results
+    worker.terminate();
+    log('\n── Results ──', 'info');
+    log(`CPU NTT prove: ${(cpuMs/1000).toFixed(2)}s`);
+    if (gpuMs !== null) {
+      log(`GPU NTT prove: ${(gpuMs/1000).toFixed(2)}s`);
+      const imp = ((cpuMs - gpuMs) / cpuMs * 100);
+      const ok = imp > 0;
+      log(`Improvement: ${ok?'+':''}${imp.toFixed(1)}%`, ok ? 'ok' : 'err');
+      log(`Target: ≥6%`, imp >= 6 ? 'ok' : 'warn');
+
+      $('bigNum').textContent = `${ok?'+':''}${imp.toFixed(1)}%`;
+      $('bigNum').style.color = imp>=6?'var(--green)':imp>0?'var(--yellow)':'var(--red)';
+      $('bigRes').style.borderColor = imp>=6?'var(--green)':imp>0?'var(--yellow)':'var(--red)';
+    } else {
+      $('bigNum').textContent = 'N/A (no WebGPU)';
+      $('bigNum').style.color = 'var(--dim)';
+    }
+
+    $('resPanel').style.display = 'block';
+    prog('Done');
+    log('\nBenchmark complete.', 'ok');
+
+  } catch (e) {
+    log(`ERROR: ${e.message}`, 'err');
+    console.error(e);
+    prog('Failed');
+  }
+  $('btnRun').disabled = false;
+};
+
+// Auto-detect WebGPU on page load
+if (navigator.gpu) {
+  $('sGpu').textContent = 'Available'; $('sGpu').className = 'sv ok';
+} else {
+  $('sGpu').textContent = 'Not Available'; $('sGpu').className = 'sv fail';
+}
+$('btnRun').disabled = false;
+</script>
+</body>
+</html>

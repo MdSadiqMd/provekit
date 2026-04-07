@@ -29,6 +29,12 @@ provekit-verifier.workspace = true
 # Noir language
 acir.workspace = true
 
+# Crypto
+ark-bn254.workspace = true
+ark-ff.workspace = true
+
+# WHIR (for ReedSolomon trait and NTT global)
+whir.workspace = true
 
 # 3rd party
 anyhow.workspace = true
@@ -44,6 +50,7 @@ ruzstd.workspace = true  # Pure-Rust Zstd decompressor (native crate zstd uses C
 serde_json.workspace = true
 serde-wasm-bindgen.workspace = true
 wasm-bindgen.workspace = true
+web-sys = { version = "0.3", features = ["console"] }
 
 # WASM parallelism via Web Workers
 wasm-bindgen-rayon.workspace = true

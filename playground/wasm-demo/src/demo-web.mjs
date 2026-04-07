@@ -5,7 +5,10 @@
  * 1. Load compiled Noir circuit
  * 2. Generate witness using @noir-lang/noir_js (local web bundles)
  * 3. Generate proof using ProveKit WASM
+ * 4. (Optional) Detect WebGPU for GPU-accelerated NTT
  */
+import { isWebGPUAvailable } from './webgpu-ntt.mjs';
+import { initGpuNtt } from './webgpu-ntt-bridge.mjs';
 
 // DOM elements
 const logContainer = document.getElementById("logContainer");
@@ -292,6 +295,27 @@ async function initWasm() {
     }
 
     log("noir_js initialized");
+
+    if (isWebGPUAvailable()) {
+      log("WebGPU: Initializing GPU NTT bridge...");
+      const gpuOk = await initGpuNtt();
+      if (gpuOk) {
+        log("WebGPU: GPU NTT bridge initialized — acceleration active");
+      } else {
+        log("WebGPU: Bridge init failed, using CPU NTT fallback");
+      }
+      log("   → Run NTT benchmark: ntt-bench.html");
+    } else {
+      log("WebGPU: Not available (use Chrome 113+ for GPU acceleration)");
+    }
+
+    // Register NTT engine (GPU if available, CPU fallback)
+    // Must be called AFTER initGpuNtt() so the JS bridge is ready
+    if (provekit.initNtt) {
+      provekit.initNtt();
+      log("NTT engine registered");
+    }
+
     updateStep(1, "Loaded", "success");
     runBtn.disabled = false;
     window.wasmReady = true;
