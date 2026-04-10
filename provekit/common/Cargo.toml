@@ -11,9 +11,11 @@ repository.workspace = true
 [features]
 default = ["parallel"]
 parallel = []
+provekit_ntt = []
 
 [dependencies]
 # Workspace crates
+ntt.workspace = true
 skyscraper.workspace = true
 
 # Noir language
@@ -50,6 +52,14 @@ zstd.workspace = true
 mavros-vm.workspace = true
 mavros-artifacts.workspace = true
 xz2.workspace = true
+
+[dev-dependencies]
+divan.workspace = true
+proptest.workspace = true
+
+[[bench]]
+name = "rs_bench"
+harness = false
 
 [lints]
 workspace = true
